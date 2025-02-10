@@ -147,16 +147,36 @@ void Game::Update(DX::StepTimer const& timer)
 
 	if (m_InputCommands.rotRight)
 	{
-		m_camOrientation.y -= m_camRotRate;
+		m_camOrientation.y += m_camRotRate;
 	}
 	if (m_InputCommands.rotLeft)
 	{
-		m_camOrientation.y += m_camRotRate;
+		m_camOrientation.y -= m_camRotRate;
 	}
 
+	if (m_InputCommands.rotUp)
+		m_camOrientation.x -= m_camRotRate;
+
+	if (m_InputCommands.rotDown)
+		m_camOrientation.x += m_camRotRate;
+
+	if (m_camOrientation.x < -90)
+		m_camOrientation.x = -90;
+	else if (m_camOrientation.x > 90)
+		m_camOrientation.x = 90;
+
 	//create look direction from Euler angles in m_camOrientation
-	m_camLookDirection.x = sin((m_camOrientation.y)*3.1415 / 180);
-	m_camLookDirection.z = cos((m_camOrientation.y)*3.1415 / 180);
+	//m_camLookDirection.x = sin((m_camOrientation.y)*3.1415 / 180);
+	//m_camLookDirection.z = cos((m_camOrientation.y)*3.1415 / 180);
+	//m_camLookDirection.Normalize();
+
+	//
+	auto yRot = m_camOrientation.y * 3.1415 / 180;
+	auto xRot = m_camOrientation.x * 3.1415 / 180;
+
+	m_camLookDirection.x = cos(yRot)*cos(xRot);
+	m_camLookDirection.y = sin(xRot);
+	m_camLookDirection.z = sin(yRot)*cos(xRot);
 	m_camLookDirection.Normalize();
 
 	//create right vector from look Direction
@@ -179,6 +199,7 @@ void Game::Update(DX::StepTimer const& timer)
 	{
 		m_camPosition -= m_camRight*m_movespeed;
 	}
+
 
 	//update lookat point
 	m_camLookAt = m_camPosition + m_camLookDirection;
@@ -245,7 +266,12 @@ void Game::Render()
 	//CAMERA POSITION ON HUD
 	m_sprites->Begin();
 	WCHAR   Buffer[256];
-	std::wstring var = L"Cam X: " + std::to_wstring(m_camPosition.x) + L"Cam Z: " + std::to_wstring(m_camPosition.z);
+	std::wstring var = 
+		L"Cam X: " + std::to_wstring(m_camPosition.x)
+		+ L"Cam Z: " + std::to_wstring(m_camPosition.z)
+		+ L"Cam X Rot: " + std::to_wstring(m_camOrientation.x)
+		+ L"Cam Y Rot: " + std::to_wstring(m_camOrientation.y)
+		+ L"Cam Z Rot: " + std::to_wstring(m_camOrientation.z);
 	m_font->DrawString(m_sprites.get(), var.c_str() , XMFLOAT2(100, 10), Colors::Yellow);
 	m_sprites->End();
 

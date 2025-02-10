@@ -1,0 +1,10 @@
+﻿  Game.cpp
+D:\PC\User\Work\Abertay\CMP405 - Tools Programming\WFFC-Edit-Ruben-2004704\WOFFCEdit\Game.cpp(28,16): warning C4305: '=': truncation from 'double' to 'float'
+D:\PC\User\Work\Abertay\CMP405 - Tools Programming\WFFC-Edit-Ruben-2004704\WOFFCEdit\Game.cpp(177,34): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\PC\User\Work\Abertay\CMP405 - Tools Programming\WFFC-Edit-Ruben-2004704\WOFFCEdit\Game.cpp(178,28): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\PC\User\Work\Abertay\CMP405 - Tools Programming\WFFC-Edit-Ruben-2004704\WOFFCEdit\Game.cpp(179,34): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\PC\User\Work\Abertay\CMP405 - Tools Programming\WFFC-Edit-Ruben-2004704\WOFFCEdit\Game.cpp(289,57): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\PC\User\Work\Abertay\CMP405 - Tools Programming\WFFC-Edit-Ruben-2004704\WOFFCEdit\Game.cpp(288,57): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\PC\User\Work\Abertay\CMP405 - Tools Programming\WFFC-Edit-Ruben-2004704\WOFFCEdit\Game.cpp(287,97): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\PC\User\Work\Abertay\CMP405 - Tools Programming\WFFC-Edit-Ruben-2004704\WOFFCEdit\Game.cpp(268,10): warning C4101: 'Buffer': unreferenced local variable
+  Win32SimpleSample.vcxproj -> D:\PC\User\Work\Abertay\CMP405 - Tools Programming\WFFC-Edit-Ruben-2004704\WOFFCEdit\Debug\WoFEdit.exe
