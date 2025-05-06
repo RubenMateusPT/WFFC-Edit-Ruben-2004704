@@ -17,6 +17,12 @@
     <Filter Include="SQLITE">
       <UniqueIdentifier>{a006b0b6-46b2-4c4f-808a-ec8fe3e790eb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="MyClasses">
+      <UniqueIdentifier>{7d17d514-fcdb-44b0-b8f0-217f11f25121}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MyClasses\Input">
+      <UniqueIdentifier>{43d5a15b-2a1c-40ff-a04e-12b4009a0a62}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -58,6 +64,12 @@
     </ClCompile>
     <ClCompile Include="SelectDialogue.cpp">
       <Filter>MFC</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>MyClasses</Filter>
+    </ClCompile>
+    <ClCompile Include="InputManager.cpp">
+      <Filter>MyClasses\Input</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -107,6 +119,12 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SelectDialogue.h">
       <Filter>MFC</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>MyClasses</Filter>
+    </ClInclude>
+    <ClInclude Include="InputManager.h">
+      <Filter>MyClasses\Input</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

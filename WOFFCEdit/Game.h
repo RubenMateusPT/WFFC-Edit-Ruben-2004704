@@ -13,11 +13,18 @@
 #include "InputCommands.h"
 #include <vector>
 
+#include "Camera.h"
+#include "InputManager.h"
+
 
 // A basic game implementation that creates a D3D11 device and
 // provides a game loop.
 class Game : public DX::IDeviceNotify
 {
+	//My Stuff
+	Camera _mainCamera;
+
+
 public:
 
 	Game();
@@ -28,7 +35,7 @@ public:
 	void SetGridState(bool state);
 
 	// Basic game loop
-	void Tick(InputCommands * Input);
+	void Tick(InputManager* Input);
 	void Render();
 
 	// Rendering helpers
@@ -67,18 +74,18 @@ private:
 	//tool specific
 	std::vector<DisplayObject>			m_displayList;
 	DisplayChunk						m_displayChunk;
-	InputCommands						m_InputCommands;
+	//InputCommands						m_InputCommands;
 
 	//functionality
-	float								m_movespeed;
+	//float								m_movespeed;
 
 	//camera
-	DirectX::SimpleMath::Vector3		m_camPosition;
-	DirectX::SimpleMath::Vector3		m_camOrientation;
-	DirectX::SimpleMath::Vector3		m_camLookAt;
-	DirectX::SimpleMath::Vector3		m_camLookDirection;
-	DirectX::SimpleMath::Vector3		m_camRight;
-	float m_camRotRate;
+	//DirectX::SimpleMath::Vector3		m_camPosition;
+	//DirectX::SimpleMath::Vector3		m_camOrientation;
+	//DirectX::SimpleMath::Vector3		m_camLookAt;
+	//DirectX::SimpleMath::Vector3		m_camLookDirection;
+	//DirectX::SimpleMath::Vector3		m_camRight;
+	//float m_camRotRate;
 
 	//control variables
 	bool m_grid;							//grid rendering on / off
