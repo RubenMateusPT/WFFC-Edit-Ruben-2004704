@@ -8,7 +8,10 @@ class InputManager
 public:
 	//Keyboard
 	char _keyboardKeys[256];
+	bool _leftAltKey;
+
 	bool IsKeyPressed(char key);
+	bool IsLeftAltPressed();
 
 	//Mouse
 	DirectX::SimpleMath::Vector2 _mousePosition;

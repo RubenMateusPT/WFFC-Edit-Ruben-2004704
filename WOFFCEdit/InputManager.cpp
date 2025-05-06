@@ -5,6 +5,11 @@ bool InputManager::IsKeyPressed(char key)
 	return _keyboardKeys[key];
 }
 
+bool InputManager::IsLeftAltPressed()
+{
+	return _leftAltKey;
+}
+
 
 DirectX::SimpleMath::Vector2 InputManager::GetMousePosition()
 {

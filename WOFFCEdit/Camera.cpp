@@ -1,6 +1,7 @@
 #include "Camera.h"
 
 #include <string>
+#include <valarray>
 
 void Camera::Initiliazie()
 {
@@ -31,61 +32,73 @@ void Camera::Initiliazie()
 	//Camera Settings
 	_moveSpeed = 0.30;
 	_panSpeed = 0.05;
-
+	_rotationSpeed = 0.25;
 	_zoomSpeed = 2.00;
 
-	_rotationSpeed = 0.25;
+	// Arc Camera
+	_arcZoomSpeed = 0.25;
+
+	// Combo Key Tracker
+	_lastComboKeyPressed = None;
 }
 
 void Camera::ProcessInput(InputManager* input)
 {
+	// Get Combo Key Information
+	// Order Matter, as it give priority
+	if (input->IsMouseButtonPressed(2))
+		_lastComboKeyPressed = MiddleMouse;
+	else if (input->IsLeftAltPressed())
+		_lastComboKeyPressed = LeftAlt;
+	else if (input->IsMouseButtonPressed(1))
+		_lastComboKeyPressed = RightMouse;
+	else
+		_lastComboKeyPressed = None;
+
 	//Get Mouse Information
 	_currentMousePostion = input->GetMousePosition();
 	_mouseXDifference = _currentMousePostion.x - _lastMousePosition.x;
 	_mouseYDifference = _currentMousePostion.y - _lastMousePosition.y;
+	_mouseWheelTurn = input->GetMouseWheelTurns();
 	_lastMousePosition = _currentMousePostion;
 
-	auto t = L"\nMouse Y: " + std::to_wstring(_currentMousePostion.y);
-	OutputDebugStringW(t.c_str());
+	// Simple Actions
+		// Movement
+		_moveForward = input->IsMouseButtonPressed(1) && input->IsKeyPressed('W');
+		_moveBackwards = input->IsMouseButtonPressed(1) && input->IsKeyPressed('S');
+		_moveLeft = input->IsMouseButtonPressed(1) && input->IsKeyPressed('A');
+		_moveRight = input->IsMouseButtonPressed(1) && input->IsKeyPressed('D');
+		_moveUp = input->IsMouseButtonPressed(1) && input->IsKeyPressed('Q');
+		_moveDown = input->IsMouseButtonPressed(1) && input->IsKeyPressed('E');
 
-	// Movement
-	_moveForward = input->IsMouseButtonPressed(1) && input->IsKeyPressed('W');
-	_moveBackwards = input->IsMouseButtonPressed(1) && input->IsKeyPressed('S');
-	_moveLeft = input->IsMouseButtonPressed(1) && input->IsKeyPressed('A');
-	_moveRight = input->IsMouseButtonPressed(1) && input->IsKeyPressed('D');
-	_moveUp = input->IsMouseButtonPressed(1) && input->IsKeyPressed('Q');
-	_moveDown = input->IsMouseButtonPressed(1) && input->IsKeyPressed('E');
+		// Panning
+		_panVertically = input->IsMouseButtonPressed(2) && _mouseYDifference != 0;
+		_panHorizontally = input->IsMouseButtonPressed(2) && _mouseXDifference != 0;
 
-	// Panning
-	_panVertically = input->IsMouseButtonPressed(2) && _mouseYDifference != 0;
-	_panHorizontally = input->IsMouseButtonPressed(2) && _mouseXDifference != 0;
+		// Rotation
+		_rotateHorizontally = input->IsMouseButtonPressed(1) && _mouseXDifference != 0;
+		_rotateVertically = input->IsMouseButtonPressed(1) && _mouseYDifference != 0;
 
-	// Rotation
+		// Zoom
+		_zoom = _mouseWheelTurn != 0;
 
-
-	_rotateHorizontally = input->IsMouseButtonPressed(1) && _mouseXDifference != 0;
-	_rotateVertically = input->IsMouseButtonPressed(1) && _mouseYDifference != 0;
-
-
-
-	// Zoom
-	_mouseWheelTurn = input->GetMouseWheelTurns();
-	_zoomIn = _mouseWheelTurn > 0;
-	_zoomOut = _mouseWheelTurn < 0;
-
+	// Arcball Camera
+		//Zoom
+		_arcZoomVertically = input->IsLeftAltPressed() && input->IsMouseButtonPressed(1) && _mouseYDifference != 0;
+		_arcZoomHorizontally = input->IsLeftAltPressed() && input->IsMouseButtonPressed(1) && _mouseXDifference != 0;
 }
 
 void Camera::Update()
 {
-	//camera motion is on a plane, so kill the 7 component of the look direction
-	DirectX::SimpleMath::Vector3 planarMotionVector = _lookDirection;
-	planarMotionVector.y = 0.0;
+	//Action
+	if (_lastComboKeyPressed == RightMouse)
+	{
+		if (_rotateHorizontally)
+			_orientation.y += _rotationSpeed * _mouseXDifference;
 
-	if (_rotateHorizontally)
-		_orientation.y += _rotationSpeed * _mouseXDifference;
-
-	if (_rotateVertically)
-		_orientation.x += _rotationSpeed * -_mouseYDifference;
+		if (_rotateVertically)
+			_orientation.x += _rotationSpeed * -_mouseYDifference;
+	}
 
 	//create look direction from Euler angles in m_camOrientation
 	//Clamp camera vertical inclination
@@ -106,39 +119,54 @@ void Camera::Update()
 	_lookDirection.Cross(DirectX::SimpleMath::Vector3::UnitY, _camRight);
 
 	//process input and update stuff
-	// Movement 
-	if (_moveForward)
-		_position += _lookDirection * _moveSpeed;
 
-	if (_moveBackwards)
-		_position -= _lookDirection * _moveSpeed;
+	// Actions
+		// Movement
+		if (_lastComboKeyPressed == RightMouse) {
+			if (_moveForward)
+				_position += _lookDirection * _moveSpeed;
 
-	if (_moveLeft)
-		_position -= _camRight * _moveSpeed;
+			if (_moveBackwards)
+				_position -= _lookDirection * _moveSpeed;
 
-	if (_moveRight)
-		_position += _camRight * _moveSpeed;
+			if (_moveLeft)
+				_position -= _camRight * _moveSpeed;
 
-	if (_moveUp)
-		_position.y -= _moveSpeed;
+			if (_moveRight)
+				_position += _camRight * _moveSpeed;
 
-	if (_moveDown)
-		_position.y += _moveSpeed;
+			if (_moveUp)
+				_position.y -= _moveSpeed;
 
-	// Panning
-	if (_panVertically)
-		_position.y += _panSpeed * _mouseYDifference;
+			if (_moveDown)
+				_position.y += _moveSpeed;
+		}
 
-	if (_panHorizontally)
-		_position -= _camRight * _panSpeed * _mouseXDifference;
+		// Panning
+		if (_lastComboKeyPressed == MiddleMouse) {
+			if (_panVertically)
+				_position.y += _panSpeed * _mouseYDifference;
+
+			if (_panHorizontally)
+				_position -= _camRight * _panSpeed * _mouseXDifference;
+		}
+
+		// Zoom
+		if (_zoom)
+			_position += _lookDirection * _zoomSpeed * _mouseWheelTurn;
 
 
-	// Zoom Process
-	if (_zoomIn)
-		_position += _lookDirection * _zoomSpeed * _mouseWheelTurn;
 
-	if (_zoomOut)
-		_position -= _lookDirection * _zoomSpeed * -_mouseWheelTurn;
+	// Arcball
+		if (_lastComboKeyPressed == LeftAlt)
+		{
+			//Zoom
+			if (_arcZoomVertically)
+				_position += _lookDirection * _arcZoomSpeed * _mouseYDifference;
+
+			if (_arcZoomHorizontally)
+				_position += _lookDirection * _arcZoomSpeed * _mouseXDifference;
+		}
 
 	//update lookat point
 	_lookAt = _position + _lookDirection;

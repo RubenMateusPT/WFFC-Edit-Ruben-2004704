@@ -307,6 +307,21 @@ void ToolMain::UpdateInput(MSG * msg)
 			_inputManager._keyboardKeys[msg->wParam] = false;
 			break;
 
+		case WM_SYSKEYDOWN:
+			{
+			if (msg->wParam == 18)
+				_inputManager._leftAltKey = true;
+			}
+			break;
+
+		case WM_SYSKEYUP:
+			{
+				if (msg->wParam == 18)
+					_inputManager._leftAltKey = false;
+			}
+			break;
+
+
 		// Read Mouse
 		case WM_MOUSEMOVE:
 			{

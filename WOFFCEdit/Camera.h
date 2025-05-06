@@ -4,6 +4,15 @@
 class Camera
 {
 private:
+	enum ComboKeys
+	{
+		None,
+		RightMouse,
+		MiddleMouse,
+		LeftAlt
+	};
+
+private:
 
 	// Camera Tracking
 	DirectX::SimpleMath::Vector3 _position;
@@ -35,24 +44,31 @@ private:
 		bool _panVertically;
 		bool _panHorizontally;
 
+		// Rotation
+		bool _rotateVertically;
+		bool _rotateHorizontally;
+
+		// Zoom
+		bool _zoom;
+
+	// Arcball Actions
+		// Zoom
+		bool _arcZoomVertically;
+		bool _arcZoomHorizontally;
 
 
-
-	bool _zoomIn;
-	bool _zoomOut;
-
-	bool _rotateHorizontally;
-	bool _rotateVertically;
-
-
+	// Combo Keys track
+		ComboKeys _lastComboKeyPressed;
 
 	// Camera Settings
 	float _moveSpeed;
 	float _panSpeed;
-
+	float _rotationSpeed;
 	float _zoomSpeed;
 
-	float _rotationSpeed;
+	// Arc Camera Settings
+	float _arcZoomSpeed;
+
 
 public:
 	DirectX::SimpleMath::Vector3 GetCameraPosition() { return _position; }
@@ -63,7 +79,4 @@ public:
 
 	void ProcessInput(InputManager* input);
 	void Update();
-
-
-	bool t() { return _zoomIn; };
 };

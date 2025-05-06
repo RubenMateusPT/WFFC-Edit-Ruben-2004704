@@ -182,7 +182,6 @@ void Game::Render()
 	m_sprites->Begin();
 	WCHAR   Buffer[256];
 	std::wstring var = L"Cam X: " + std::to_wstring(_mainCamera.GetCameraPosition().x) + L"Cam Z: " + std::to_wstring(_mainCamera.GetCameraPosition().z);
-    var = L"Wheel Value: " + std::to_wstring(_mainCamera.t());
 	m_font->DrawString(m_sprites.get(), var.c_str() , XMFLOAT2(100, 10), Colors::Yellow);
 	m_sprites->End();
 
