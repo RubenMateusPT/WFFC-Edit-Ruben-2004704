@@ -50,12 +50,49 @@ int Game::MousePicking()
         //loop through mesh list for object
         for (int y = 0; y < m_displayList[i].m_model.get()->meshes.size(); y++)
         {
+            m_displayList[i].m_model.get()->meshes[y]->boundingBox.Center;
+
             //checking for ray intersection
             if (m_displayList[i].m_model.get()->meshes[y]->boundingBox.Intersects(nearPoint, pickingVector, pickedDistance))
             {
                 selectedID = i;
             }
         }
+    }
+
+
+    //Remove old hightlight
+    if (_previousPickedObjectID != selectedID)
+    {
+	    if (_previousPickedObjectID >= 0)
+	    {
+            _previousPickedObject->m_model->UpdateEffects([](IEffect* objectEffect)
+                {
+                    IEffectFog* highlightEffect = dynamic_cast<IEffectFog*>(objectEffect);
+                    if (highlightEffect)
+                        highlightEffect->SetFogEnabled(false);
+                });
+	    }
+    }
+
+    if (selectedID >= 0) //On New Selected Object
+    {
+        _mainCamera.SetSelectedObject(&m_displayList[selectedID]);
+        //object.m_model->UpdateEffects([](IEffect* objectEffect)
+        //    {
+        //        IEffectFog* highlightEffect = dynamic_cast<IEffectFog*>(objectEffect);
+        //        if (highlightEffect)
+        //        {
+        //            highlightEffect->SetFogStart(0.0f);
+        //            highlightEffect->SetFogEnd(0.0f);
+        //            highlightEffect->SetFogColor(Colors::Red);
+        //            highlightEffect->SetFogEnd(true);
+        //        }
+        //    });
+    }
+    else //On Empty Selection
+    {
+        _mainCamera.SetSelectedObject(nullptr);
     }
 
     //if we got a hit.  return it.  
@@ -94,6 +131,7 @@ void Game::Initialize(HWND window, int width, int height)
 {
     //My Stuff
     _mainCamera.Initiliazie();
+    _previousPickedObjectID = -1;
 
     GetClientRect(window, &m_ScreenDimensions);
 

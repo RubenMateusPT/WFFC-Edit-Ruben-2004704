@@ -1,4 +1,5 @@
 #pragma once
+#include "DisplayObject.h"
 #include "InputManager.h"
 
 class Camera
@@ -14,22 +15,26 @@ private:
 
 private:
 
+	//Input
+		// Mouse Tracking
+			// Mouse Position
+			DirectX::SimpleMath::Vector2 _lastMousePosition;
+			DirectX::SimpleMath::Vector2 _currentMousePostion;
+			float _mouseXDifference;
+			float _mouseYDifference;
+
+			// Mouse Wheel
+			int _mouseWheelTurn;
+
+		// Combo Keys track
+		ComboKeys _lastComboKeyPressed;
+
 	// Camera Tracking
 	DirectX::SimpleMath::Vector3 _position;
-	DirectX::SimpleMath::Vector3 _orientation;
+	DirectX::SimpleMath::Vector3 _orientation; //Euler Angles in Degrees
 	DirectX::SimpleMath::Vector3 _lookAt;
-	DirectX::SimpleMath::Vector3 _lookDirection;
+	DirectX::SimpleMath::Vector3 _lookDirection; //Camera Facing Direction
 	DirectX::SimpleMath::Vector3 _camRight;
-
-	// Mouse Tracking
-		// Mouse Position
-		DirectX::SimpleMath::Vector2 _lastMousePosition;
-		DirectX::SimpleMath::Vector2 _currentMousePostion;
-		float _mouseXDifference;
-		float _mouseYDifference;
-
-		// Mouse Wheel
-		int _mouseWheelTurn;
 
 	// Camera Actions
 		// Movement
@@ -48,27 +53,36 @@ private:
 		bool _rotateVertically;
 		bool _rotateHorizontally;
 
+		bool _arcRotateVertically;
+		bool _arcRotateHorizontally;
+
 		// Zoom
 		bool _zoom;
 
-	// Arcball Actions
-		// Zoom
 		bool _arcZoomVertically;
 		bool _arcZoomHorizontally;
 
-
-	// Combo Keys track
-		ComboKeys _lastComboKeyPressed;
-
-	// Camera Settings
+	// Camera Setting
 	float _moveSpeed;
 	float _panSpeed;
 	float _rotationSpeed;
 	float _zoomSpeed;
 
-	// Arc Camera Settings
+	// Camera Arc
+	float _arcRotationSpeed;
 	float _arcZoomSpeed;
 
+	//Object Selection
+	DisplayObject* _selectedObject;
+	float _distanceOffsetToSelectedObject;
+
+	bool _hasTarget;
+	DirectX::SimpleMath::Vector3 _target;
+
+	bool _moveToObject;
+
+	float _imaginaryTargetOffset;
+	float _maxZoomInDistanceToTarget;
 
 public:
 	DirectX::SimpleMath::Vector3 GetCameraPosition() { return _position; }
@@ -76,7 +90,19 @@ public:
 
 public:
 	void Initiliazie();
+	void SetSelectedObject(DisplayObject* selected);
 
 	void ProcessInput(InputManager* input);
 	void Update();
+
+private:
+	void PanningUpdate();
+	void MovementUpdate();
+	void RotationUpdate();
+	void ArcRotationUpdate();
+	void ZoomUpdate();
+	void ArcZoomUpdate();
+	void ApplyCameraChanges();
+
+	void MoveCameraToTarget();
 };

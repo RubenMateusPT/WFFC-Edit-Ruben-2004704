@@ -25,9 +25,15 @@ public:
 	//My Stuff
 	InputManager* _input;
 	Camera _mainCamera;
+
 	int MousePicking();
 
-	RECT		m_ScreenDimensions;
+	int _previousPickedObjectID;
+	DisplayObject* _previousPickedObject;
+
+
+
+	RECT m_ScreenDimensions;
 public:
 
 	Game();

@@ -282,7 +282,7 @@ void ToolMain::onActionSaveTerrain()
 
 void ToolMain::Tick(MSG *msg)
 {
-	if (_inputManager.IsMouseButtonPressed(0))
+	if (!_inputManager.IsLeftAltPressed() && _inputManager.IsMouseButtonPressed(0))
 	{
 		m_selectedObject = m_d3dRenderer.MousePicking();
 		_inputManager._mouseButtons[0] = false;

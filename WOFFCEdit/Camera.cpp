@@ -1,6 +1,4 @@
 #include "Camera.h"
-
-#include <string>
 #include <valarray>
 
 void Camera::Initiliazie()
@@ -35,11 +33,24 @@ void Camera::Initiliazie()
 	_rotationSpeed = 0.25;
 	_zoomSpeed = 2.00;
 
-	// Arc Camera
-	_arcZoomSpeed = 0.25;
+	_arcRotationSpeed = 0.005;
+	_arcZoomSpeed = 0.01;
+	
 
 	// Combo Key Tracker
 	_lastComboKeyPressed = None;
+
+	//Object Selection
+	_selectedObject = nullptr;
+	_moveToObject = false;
+	_distanceOffsetToSelectedObject = 3;
+	_maxZoomInDistanceToTarget = 1;
+	_imaginaryTargetOffset = 15;
+}
+
+void Camera::SetSelectedObject(DisplayObject* selected)
+{
+	_selectedObject = selected;
 }
 
 void Camera::ProcessInput(InputManager* input)
@@ -83,32 +94,194 @@ void Camera::ProcessInput(InputManager* input)
 		_zoom = _mouseWheelTurn != 0;
 
 	// Arcball Camera
+		//Rotation
+		_arcRotateVertically = input->IsLeftAltPressed() && input->IsMouseButtonPressed(0) && _mouseYDifference != 0;
+		_arcRotateHorizontally = input->IsLeftAltPressed() && input->IsMouseButtonPressed(0) && _mouseXDifference != 0;
 		//Zoom
 		_arcZoomVertically = input->IsLeftAltPressed() && input->IsMouseButtonPressed(1) && _mouseYDifference != 0;
 		_arcZoomHorizontally = input->IsLeftAltPressed() && input->IsMouseButtonPressed(1) && _mouseXDifference != 0;
+
+		//Object Selection
+		_moveToObject = input->IsKeyPressed('F') && _selectedObject != nullptr;
 }
 
 void Camera::Update()
 {
-	//Action
-	if (_lastComboKeyPressed == RightMouse)
-	{
-		if (_rotateHorizontally)
-			_orientation.y += _rotationSpeed * _mouseXDifference;
+	MoveCameraToTarget();
 
-		if (_rotateVertically)
-			_orientation.x += _rotationSpeed * -_mouseYDifference;
+	PanningUpdate();
+	MovementUpdate();
+	RotationUpdate();
+	ZoomUpdate();
+
+	ArcRotationUpdate();
+	ArcZoomUpdate();
+
+	ApplyCameraChanges();
+}
+
+void Camera::PanningUpdate()
+{
+	if (_lastComboKeyPressed != MiddleMouse)
+		return;
+
+	if (_panVertically)
+		_position.y += _panSpeed * _mouseYDifference;
+
+	if (_panHorizontally)
+		_position -= _camRight * _panSpeed * _mouseXDifference;
+
+	if (_panVertically || _panHorizontally)
+		_hasTarget = false;
+}
+
+void Camera::MovementUpdate()
+{
+	if (_lastComboKeyPressed != RightMouse)
+		return;
+
+	// World Movement
+	if (_moveForward)
+		_position += _lookDirection * _moveSpeed;
+
+	if (_moveBackwards)
+		_position -= _lookDirection * _moveSpeed;
+
+	if (_moveLeft)
+		_position -= _camRight * _moveSpeed;
+
+	if (_moveRight)
+		_position += _camRight * _moveSpeed;
+
+	if (_moveUp)
+		_position.y -= _moveSpeed;
+
+	if (_moveDown)
+		_position.y += _moveSpeed;
+
+	if (_moveForward || 
+		_moveBackwards ||
+		_moveLeft ||
+		_moveRight ||
+		_moveUp ||
+		_moveDown)
+		_hasTarget = false;
+}
+
+void Camera::RotationUpdate()
+{
+	if (_lastComboKeyPressed != RightMouse)
+		return;
+
+	// Rotation
+	if (_rotateVertically)
+		_orientation.x += _rotationSpeed * -_mouseYDifference;
+
+	if (_rotateHorizontally)
+		_orientation.y += _rotationSpeed * _mouseXDifference;
+
+	//Clamp camera vertical inclination
+	if (_orientation.x < -90) // Look at Ground
+		_orientation.x = -89.85;
+	else if (_orientation.x > 90) // Look at Sky
+		_orientation.x = 89.85;
+
+	if (_rotateVertically || _rotateHorizontally)
+		_hasTarget = false;
+}
+
+void Camera::ArcRotationUpdate()
+{
+	if (_lastComboKeyPressed != LeftAlt)
+		return;
+
+	if (!_hasTarget)
+	{
+		//if there is no selected target (object) then create a temporary one in the world
+		_hasTarget = true;
+		_target = _position + _lookDirection * _imaginaryTargetOffset;
 	}
 
-	//create look direction from Euler angles in m_camOrientation
-	//Clamp camera vertical inclination
-	if (_orientation.x < -90)
-		_orientation.x = -90;
-	else if (_orientation.x > 90)
-		_orientation.x = 90;
+	//Get the current direction from camera position to target
+	auto targetDirection = _position - _target;
+	//Get the camera distance to target (will serve as radius)
+	double distanceToTarget = targetDirection.Length();
 
-	auto yRot = _orientation.y * 3.1415 / 180;
-	auto xRot = _orientation.x * 3.1415 / 180;
+	//Calculate the cartisian angles in radians
+	//the logic comes from the use sphere formulas,
+	//where the center is our target, and the camera the points on the edge of the sphere
+	double azimuth = atan2(targetDirection.x, targetDirection.z);
+	double elevation = asin(targetDirection.y / distanceToTarget);
+
+	if (_arcRotateVertically)
+		elevation += _arcRotationSpeed * _mouseYDifference;
+
+	if (_arcRotateHorizontally)
+		azimuth += _arcRotationSpeed * -_mouseXDifference;
+
+	if (!_arcRotateVertically && !_arcRotateHorizontally)
+		return;
+
+	//Verticly clamp rotation, so that its doent do a turn around
+	if (elevation >= DirectX::XM_PIDIV2)
+		elevation = 1.56;
+	else if (elevation <= -DirectX::XM_PIDIV2)
+		elevation = -1.56;
+
+	//Set the camera position based on the sphere formula
+	_position.x = _target.x + distanceToTarget * cos(elevation) * sin(azimuth);
+	_position.y = _target.y + distanceToTarget * sin(elevation) ;
+	_position.z = _target.z + distanceToTarget * cos(elevation) * cos(azimuth);
+
+	//We need to recalute the look direction to face our target
+	_lookDirection = _target - _position;
+	_lookDirection.Normalize();
+
+	//Convert the look direction from a vector to euler angles in degrees
+	_orientation.x = DirectX::XMConvertToDegrees(asin(_lookDirection.y));
+	_orientation.y = DirectX::XMConvertToDegrees(atan2(_lookDirection.z, _lookDirection.x));
+	_orientation.z = 0;
+}
+
+void Camera::ZoomUpdate()
+{
+	if (_lastComboKeyPressed == LeftAlt)
+		return;
+	
+	if (_zoom)
+		_position += _lookDirection * _zoomSpeed * _mouseWheelTurn;
+
+	if (_hasTarget)
+	{
+		auto distanceToTarget = (_position - _target).Length();
+		if (distanceToTarget <= _maxZoomInDistanceToTarget)
+			_hasTarget = false;
+	}
+}
+
+void Camera::ArcZoomUpdate()
+{
+	if (_lastComboKeyPressed != LeftAlt)
+		return;
+
+	auto lastPosition = _position;
+
+	if (_arcZoomVertically)
+		_position += _lookDirection * _arcZoomSpeed * _mouseYDifference;
+
+	if (_arcZoomHorizontally)
+		_position += _lookDirection * _arcZoomSpeed * _mouseXDifference;
+
+	auto distanceToTarget = (_position - _target).Length();
+	if (distanceToTarget <= _maxZoomInDistanceToTarget)
+		_position = lastPosition;
+}
+
+void Camera::ApplyCameraChanges()
+{
+	//Convert Euler Angles of Camera to a Look Direction
+	auto yRot = DirectX::XMConvertToRadians(_orientation.y);
+	auto xRot = DirectX::XMConvertToRadians(_orientation.x);
 
 	_lookDirection.x = cos(yRot) * cos(xRot);
 	_lookDirection.y = sin(xRot);
@@ -118,56 +291,26 @@ void Camera::Update()
 	//create right vector from look Direction
 	_lookDirection.Cross(DirectX::SimpleMath::Vector3::UnitY, _camRight);
 
-	//process input and update stuff
-
-	// Actions
-		// Movement
-		if (_lastComboKeyPressed == RightMouse) {
-			if (_moveForward)
-				_position += _lookDirection * _moveSpeed;
-
-			if (_moveBackwards)
-				_position -= _lookDirection * _moveSpeed;
-
-			if (_moveLeft)
-				_position -= _camRight * _moveSpeed;
-
-			if (_moveRight)
-				_position += _camRight * _moveSpeed;
-
-			if (_moveUp)
-				_position.y -= _moveSpeed;
-
-			if (_moveDown)
-				_position.y += _moveSpeed;
-		}
-
-		// Panning
-		if (_lastComboKeyPressed == MiddleMouse) {
-			if (_panVertically)
-				_position.y += _panSpeed * _mouseYDifference;
-
-			if (_panHorizontally)
-				_position -= _camRight * _panSpeed * _mouseXDifference;
-		}
-
-		// Zoom
-		if (_zoom)
-			_position += _lookDirection * _zoomSpeed * _mouseWheelTurn;
-
-
-
-	// Arcball
-		if (_lastComboKeyPressed == LeftAlt)
-		{
-			//Zoom
-			if (_arcZoomVertically)
-				_position += _lookDirection * _arcZoomSpeed * _mouseYDifference;
-
-			if (_arcZoomHorizontally)
-				_position += _lookDirection * _arcZoomSpeed * _mouseXDifference;
-		}
 
 	//update lookat point
 	_lookAt = _position + _lookDirection;
 }
+
+void Camera::MoveCameraToTarget()
+{
+	if (!_moveToObject)
+		return;
+
+	//Execute only Once
+	_moveToObject = false;
+
+	//Move camera to object position
+	_position = _selectedObject->m_position;
+
+	//Offset camera from object by a distance on the Look Direction of the camera
+	_position -= _lookDirection * _distanceOffsetToSelectedObject;
+
+	_target = _selectedObject->m_position;
+	_hasTarget = true;
+}
+
