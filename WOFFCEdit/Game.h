@@ -21,10 +21,13 @@
 // provides a game loop.
 class Game : public DX::IDeviceNotify
 {
+public:
 	//My Stuff
+	InputManager* _input;
 	Camera _mainCamera;
+	int MousePicking();
 
-
+	RECT		m_ScreenDimensions;
 public:
 
 	Game();
