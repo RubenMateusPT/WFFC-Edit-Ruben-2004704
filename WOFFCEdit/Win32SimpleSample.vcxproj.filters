@@ -71,6 +71,9 @@
     <ClCompile Include="InputManager.cpp">
       <Filter>MyClasses\Input</Filter>
     </ClCompile>
+    <ClCompile Include="ObjectManipulator.cpp">
+      <Filter>MyClasses</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DeviceResources.h">
@@ -125,6 +128,9 @@
     </ClInclude>
     <ClInclude Include="InputManager.h">
       <Filter>MyClasses\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectManipulator.h">
+      <Filter>MyClasses</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
