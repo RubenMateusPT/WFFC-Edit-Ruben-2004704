@@ -14,13 +14,17 @@ public:
 	bool _leftArrow;
 	bool _rightArrow;
 
+	bool _leftCtrlKey;
 	bool _leftAltKey;
 
 	bool IsKeyPressed(char key);
+
 	bool IsUpArrowPressed();
 	bool IsDownArrowPressed();
 	bool IsLeftArrowPressed();
 	bool IsRightArrowPressed();
+
+	bool IsLeftCtrlPressed();
 	bool IsLeftAltPressed();
 
 	//Mouse

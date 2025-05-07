@@ -12,7 +12,6 @@ ToolMain::ToolMain()
 {
 
 	m_currentChunk = 0;		//default value
-	m_selectedObject = 0;	//initial selection ID
 	m_sceneGraph.clear();	//clear the vector for the scenegraph
 	m_databaseConnection = NULL;
 
@@ -30,12 +29,11 @@ ToolMain::~ToolMain()
 	sqlite3_close(m_databaseConnection);		//close the database connection
 }
 
-
-int ToolMain::getCurrentSelectionID()
+std::map<int, int>* ToolMain::getCurrentSelections()
 {
-
-	return m_selectedObject;
+	return &_selectedObjects;
 }
+
 
 void ToolMain::onActionInitialise(HWND handle, int width, int height)
 {
@@ -284,7 +282,29 @@ void ToolMain::Tick(MSG *msg)
 {
 	if (!_inputManager.IsLeftAltPressed() && _inputManager.IsMouseButtonPressed(0))
 	{
-		m_selectedObject = m_d3dRenderer.MousePicking();
+		if (!_inputManager.IsLeftCtrlPressed())
+		{
+			_selectedObjects.clear();
+		}
+
+		auto newSelect = m_d3dRenderer.MousePicking(_inputManager.IsLeftCtrlPressed());
+
+		if (newSelect >= 0) // Selection
+		{
+			auto key = _selectedObjects.find(newSelect);
+			if (key == _selectedObjects.end()) //No key
+			{
+				_selectedObjects[newSelect] = newSelect;
+			}
+			else
+			{
+				_selectedObjects.erase(key);
+			}
+
+			
+		}
+
+		
 		_inputManager._mouseButtons[0] = false;
 	}
 
@@ -314,6 +334,8 @@ void ToolMain::UpdateInput(MSG * msg)
 				_inputManager._leftArrow = true;
 			else if (msg->wParam == VK_RIGHT)
 				_inputManager._rightArrow = true;
+			else if (msg->wParam == VK_CONTROL)
+				_inputManager._leftCtrlKey = true;
 
 			_inputManager._keyboardKeys[msg->wParam] = true;
 			break;
@@ -327,6 +349,8 @@ void ToolMain::UpdateInput(MSG * msg)
 				_inputManager._leftArrow = false;
 			else if (msg->wParam == VK_RIGHT)
 				_inputManager._rightArrow = false;
+			else if (msg->wParam == VK_CONTROL)
+				_inputManager._leftCtrlKey = false;
 
 			_inputManager._keyboardKeys[msg->wParam] = false;
 			break;

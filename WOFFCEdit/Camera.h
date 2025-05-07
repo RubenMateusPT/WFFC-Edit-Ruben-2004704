@@ -1,4 +1,6 @@
 #pragma once
+#include <map>
+
 #include "DisplayObject.h"
 #include "InputManager.h"
 
@@ -73,7 +75,7 @@ private:
 	float _arcZoomSpeed;
 
 	//Object Selection
-	DisplayObject* _selectedObject;
+	std::map<int, DisplayObject*>* _pickedObjects;
 	float _distanceOffsetToSelectedObject;
 
 	bool _hasTarget;
@@ -92,7 +94,7 @@ public:
 
 public:
 	void Initiliazie();
-	void SetSelectedObject(DisplayObject* selected);
+	void SetSelectedObject(std::map<int, DisplayObject*>* pickedObjects);
 
 	void ProcessInput(InputManager* input);
 	void Update();

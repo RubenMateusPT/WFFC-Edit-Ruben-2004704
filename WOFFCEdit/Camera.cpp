@@ -1,6 +1,7 @@
 #include "Camera.h"
 #include <valarray>
 
+
 void Camera::Initiliazie()
 {
 	// Camera Track Initial Values
@@ -41,17 +42,17 @@ void Camera::Initiliazie()
 	_lastComboKeyPressed = None;
 
 	//Object Selection
-	_selectedObject = nullptr;
 	_moveToObject = false;
 	_distanceOffsetToSelectedObject = 3;
 	_maxZoomInDistanceToTarget = 1;
 	_imaginaryTargetOffset = 15;
 }
 
-void Camera::SetSelectedObject(DisplayObject* selected)
+void Camera::SetSelectedObject(std::map<int, DisplayObject*>* pickedObjects)
 {
-	_selectedObject = selected;
+	_pickedObjects = pickedObjects;
 }
+
 
 void Camera::ProcessInput(InputManager* input)
 {
@@ -102,7 +103,7 @@ void Camera::ProcessInput(InputManager* input)
 		_arcZoomHorizontally = input->IsLeftAltPressed() && input->IsMouseButtonPressed(1) && _mouseXDifference != 0;
 
 		//Object Selection
-		_moveToObject = input->IsKeyPressed('F') && _selectedObject != nullptr;
+		_moveToObject = input->IsKeyPressed('F') && _pickedObjects->size() > 0;
 }
 
 void Camera::Update()
@@ -301,16 +302,31 @@ void Camera::MoveCameraToTarget()
 	if (!_moveToObject)
 		return;
 
+	if (_pickedObjects->size() == 0)
+		return;
+
 	//Execute only Once
 	_moveToObject = false;
 
 	//Move camera to object position
-	_position = _selectedObject->m_position;
+
+	auto targetPos = DirectX::SimpleMath::Vector3(0, 0, 0);
+	auto count = 0;
+	for (auto po : *_pickedObjects)
+	{
+		count++;
+		targetPos += po.second->m_position;
+	}
+	targetPos.x /= count;
+	targetPos.y /= count;
+	targetPos.z /= count;
+
+	_position = targetPos;
 
 	//Offset camera from object by a distance on the Look Direction of the camera
 	_position -= _lookDirection * _distanceOffsetToSelectedObject;
 
-	_target = _selectedObject->m_position;
+	_target = targetPos;
 	_hasTarget = true;
 }
 

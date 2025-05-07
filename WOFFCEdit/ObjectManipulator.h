@@ -1,4 +1,6 @@
 #pragma once
+#include <map>
+
 #include "DisplayObject.h"
 #include "InputManager.h"
 
@@ -15,6 +17,8 @@ public:
 	};
 
 private:
+	bool _isBlocked;
+
 	//Inputs
 		//Translate
 		bool _translateForward;
@@ -42,19 +46,18 @@ private:
 
 	//Settings
 	Mode _currentMode;
-	DisplayObject* _selected;
+	std::map<int, DisplayObject*>* _pickedObjects;
 	float _moveSpeed;
 	float _rotationSpeed;
 	float _scaleSpeed;
 
 public:
-	DisplayObject* GetSelectedObject();
 	Mode GetCurrentSelectedMode();
 	std::string GetCurrentSelectedModeName();
 
 public:
 	void Initiliazie();
-	void SetSelectedObject(DisplayObject* selected);
+	void SetSelectedObject(std::map<int, DisplayObject*>* pickedObjects);
 
 	void ProcessInput(InputManager* input);
 	void Update();

@@ -25,6 +25,11 @@ bool InputManager::IsRightArrowPressed()
 	return _rightArrow;
 }
 
+bool InputManager::IsLeftCtrlPressed()
+{
+	return _leftCtrlKey;
+}
+
 bool InputManager::IsLeftAltPressed()
 {
 	return _leftAltKey;

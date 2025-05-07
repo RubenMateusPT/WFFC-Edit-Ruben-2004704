@@ -1,10 +1,5 @@
 #include "ObjectManipulator.h"
 
-DisplayObject* ObjectManipulator::GetSelectedObject()
-{
-	return _selected;
-}
-
 ObjectManipulator::Mode ObjectManipulator::GetCurrentSelectedMode()
 {
 	return _currentMode;
@@ -30,28 +25,42 @@ std::string ObjectManipulator::GetCurrentSelectedModeName()
 
 void ObjectManipulator::Initiliazie()
 {
+	_isBlocked = false;
+
 	_currentMode = None;
 	_moveSpeed = 0.1;
 	_rotationSpeed = 0.5;
 	_scaleSpeed = 0.1;
 }
 
-void ObjectManipulator::SetSelectedObject(DisplayObject* selected)
+void ObjectManipulator::SetSelectedObject(std::map<int, DisplayObject*>* pickedObjects)
 {
-	//_currentMode = None;
-	_selected = selected;
+	_pickedObjects = pickedObjects;
 }
 
 void ObjectManipulator::ProcessInput(InputManager* input)
 {
-	if (input->IsKeyPressed('Q'))
-		_currentMode = None;
-	else if (input->IsKeyPressed('W'))
-		_currentMode = Translate;
-	else if (input->IsKeyPressed('E'))
-		_currentMode = Rotate;
-	else if (input->IsKeyPressed('R'))
-		_currentMode = Scale;
+	if (!input->IsMouseButtonPressed(1) && 
+		!input->IsMouseButtonPressed(2) &&
+		!input->IsLeftAltPressed())
+	{
+		_isBlocked = false;
+
+		if (input->IsKeyPressed('Q'))
+			_currentMode = None;
+		else if (input->IsKeyPressed('W'))
+			_currentMode = Translate;
+		else if (input->IsKeyPressed('E'))
+			_currentMode = Rotate;
+		else if (input->IsKeyPressed('R'))
+			_currentMode = Scale;
+	}
+	else
+	{
+		_isBlocked = true;
+	}
+
+
 
 	//Translate
 	_translateForward = input->IsUpArrowPressed();
@@ -80,7 +89,10 @@ void ObjectManipulator::ProcessInput(InputManager* input)
 
 void ObjectManipulator::Update()
 {
-	if (_selected == nullptr)
+	if (_isBlocked)
+		return;
+
+	if (_pickedObjects->size() == 0)
 		return;
 
 	switch (_currentMode)
@@ -102,75 +114,86 @@ void ObjectManipulator::Update()
 
 void ObjectManipulator::ProcessTranslation()
 {
-	if (_translateForward)
+	for (auto pickedObject : *_pickedObjects)
 	{
-		
+		if (_translateForward)
+			pickedObject.second->m_position.z += _moveSpeed;
+
+		if (_translateBackward)
+			pickedObject.second->m_position.z -= _moveSpeed;
+
+		if (_translateLeft)
+			pickedObject.second->m_position.x -= _moveSpeed;
+
+		if (_translateRight)
+			pickedObject.second->m_position.x += _moveSpeed;
+
+		if (_translateUp)
+			pickedObject.second->m_position.y += _moveSpeed;
+
+		if (_translateDown)
+			pickedObject.second->m_position.y -= _moveSpeed;
 	}
-		_selected->m_position.z += _moveSpeed;
 
-	if (_translateBackward)
-		_selected->m_position.z -= _moveSpeed;
 
-	if (_translateLeft)
-		_selected->m_position.x -= _moveSpeed;
-
-	if (_translateRight)
-		_selected->m_position.x += _moveSpeed;
-
-	if (_translateUp)
-		_selected->m_position.y += _moveSpeed;
-
-	if (_translateDown)
-		_selected->m_position.y -= _moveSpeed;
 }
 
 void ObjectManipulator::ProcessRotation()
 {
-	if (_rollForward)
-		_selected->m_orientation.z += _rotationSpeed;
+	for (auto pickedObject : *_pickedObjects)
+	{
+		if (_rollForward)
+			pickedObject.second->m_orientation.z += _rotationSpeed;
 
-	if (_rollBackward)
-		_selected->m_orientation.z -= _rotationSpeed;
+		if (_rollBackward)
+			pickedObject.second->m_orientation.z -= _rotationSpeed;
 
-	if (_yawLeft)
-		_selected->m_orientation.y -= _rotationSpeed;
+		if (_yawLeft)
+			pickedObject.second->m_orientation.y -= _rotationSpeed;
 
-	if (_yawRight)
-		_selected->m_orientation.y += _rotationSpeed;
+		if (_yawRight)
+			pickedObject.second->m_orientation.y += _rotationSpeed;
 
-	if (_pitchUp)
-		_selected->m_orientation.x += _rotationSpeed;
+		if (_pitchUp)
+			pickedObject.second->m_orientation.x += _rotationSpeed;
 
-	if (_pitchDown)
-		_selected->m_orientation.x -= _rotationSpeed;
+		if (_pitchDown)
+			pickedObject.second->m_orientation.x -= _rotationSpeed;
+	}
+
+
 }
 
 void ObjectManipulator::ProcessScaling()
 {
-	if (_scaleForward)
-		_selected->m_scale.z += _scaleSpeed;
+	for (auto pickedObject : *_pickedObjects)
+	{
+		if (_scaleForward)
+			pickedObject.second->m_scale.z += _scaleSpeed;
 
-	if (_scaleBackward)
-		_selected->m_scale.z -= _scaleSpeed;
+		if (_scaleBackward)
+			pickedObject.second->m_scale.z -= _scaleSpeed;
 
-	if (_scaleLeft)
-		_selected->m_scale.x -= _scaleSpeed;
+		if (_scaleLeft)
+			pickedObject.second->m_scale.x -= _scaleSpeed;
 
-	if (_scaleRight)
-		_selected->m_scale.x += _scaleSpeed;
+		if (_scaleRight)
+			pickedObject.second->m_scale.x += _scaleSpeed;
 
-	if (_scaleUp)
-		_selected->m_scale.y += _scaleSpeed;
+		if (_scaleUp)
+			pickedObject.second->m_scale.y += _scaleSpeed;
 
-	if (_scaleDown)
-		_selected->m_scale.y -= _scaleSpeed;
+		if (_scaleDown)
+			pickedObject.second->m_scale.y -= _scaleSpeed;
 
-	if (_selected->m_scale.x < 0.25)
-		_selected->m_scale.x = 0.25;
+		if (pickedObject.second->m_scale.x < 0)
+			pickedObject.second->m_scale.x = 0.02;
 
-	if (_selected->m_scale.y < 0.25)
-		_selected->m_scale.y = 0.25;
+		if (pickedObject.second->m_scale.y < 0)
+			pickedObject.second->m_scale.y = 0.02;
 
-	if (_selected->m_scale.z < 0.25)
-		_selected->m_scale.z = 0.25;
+		if (pickedObject.second->m_scale.z < 0)
+			pickedObject.second->m_scale.z = 0.02;
+	}
+
 }

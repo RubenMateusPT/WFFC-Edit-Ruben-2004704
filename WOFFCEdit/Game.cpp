@@ -13,10 +13,13 @@ using namespace DirectX::SimpleMath;
 
 using Microsoft::WRL::ComPtr;
 
-int Game::MousePicking()
+int Game::MousePicking(bool multipleSelection)
 {
     int selectedID = -1;
     float pickedDistance = 0;
+
+
+	//Get Clicked Object
 
     //setup near and far planes of frustum with mouse X and mouse y passed down from Toolmain. 
 	//they may look the same but note, the difference in Z
@@ -59,46 +62,85 @@ int Game::MousePicking()
     }
 
 
-    //Remove old hightlight
-    if (_previousPickedObjectID != selectedID)
+    //When we have a selected object,we can procced.
+
+	//Remove old(s) hightlight(s)
+    if (!multipleSelection) 
     {
-	    if (_previousPickedObjectID >= 0)
-	    {
-            m_displayList[_previousPickedObjectID].m_model->UpdateEffects([](IEffect* objectEffect)
+        if (_pickedObjects.size() > 0)
+        {
+            for (auto pickedObject : _pickedObjects)
+            {
+                pickedObject.second->m_model->UpdateEffects([](IEffect* objectEffect)
+                    {
+                        auto effect = dynamic_cast<BasicEffect*>(objectEffect);
+                        if (effect)
+                        {
+                            effect->SetDiffuseColor(Colors::White);
+                        }
+                    });
+            }
+            _pickedObjects.clear();
+        }
+    }
+
+    if (!multipleSelection || _pickedObjects.size() == 0)
+    {
+        if (selectedID >= 0) //On New Selected Object
+        {
+            _pickedObjects[selectedID] = &m_displayList[selectedID];
+            m_displayList[selectedID].m_model->UpdateEffects([](IEffect* objectEffect)
                 {
                     auto effect = dynamic_cast<BasicEffect*>(objectEffect);
                     if (effect)
                     {
-                        effect->SetDiffuseColor(Colors::White);
+                        effect->SetDiffuseColor(Colors::Red);
+                        effect->SetLightingEnabled(true);
                     }
                 });
+        }
+
+        _previousPickedObjectID = selectedID;
+    }
+    else
+    {
+	    if (selectedID > 0) // On New Selected Object
+	    {
+            if (_pickedObjects.size() == 0)
+            {
+                _previousPickedObjectID = -1;
+            }
+
+            auto key = _pickedObjects.find(selectedID);
+            if (key == _pickedObjects.end()) //No key
+            {
+                _pickedObjects[selectedID] = &m_displayList[selectedID];
+                m_displayList[selectedID].m_model->UpdateEffects([](IEffect* objectEffect)
+                    {
+                        auto effect = dynamic_cast<BasicEffect*>(objectEffect);
+                        if (effect)
+                        {
+                            effect->SetDiffuseColor(Colors::Red);
+                            effect->SetLightingEnabled(true);
+                        }
+                    });
+
+            }
+            else
+            {
+                key->second->m_model->UpdateEffects([](IEffect* objectEffect)
+                    {
+                        auto effect = dynamic_cast<BasicEffect*>(objectEffect);
+                        if (effect)
+                        {
+                            effect->SetDiffuseColor(Colors::White);
+                        }
+                    });
+                _pickedObjects.erase(key);
+            }
+
 	    }
     }
-    
-
-    if (selectedID >= 0) //On New Selected Object
-    {
-        _mainCamera.SetSelectedObject(&m_displayList[selectedID]);
-        _objectManipulator.SetSelectedObject(&m_displayList[selectedID]);
-
-        //Highlight selected obj to red
-        m_displayList[selectedID].m_model->UpdateEffects([](IEffect* objectEffect)
-            {
-                auto effect = dynamic_cast<BasicEffect*>(objectEffect);
-				if (effect)
-				{
-                    effect->SetDiffuseColor(Colors::Red);
-                    effect->SetLightingEnabled(true);
-				}
-            });
-    }
-    else //On Empty Selection
-    {
-        _mainCamera.SetSelectedObject(nullptr);
-        _objectManipulator.SetSelectedObject(nullptr);
-    }
-
-    _previousPickedObjectID = selectedID;
 
     //if we got a hit.  return it.  
     return selectedID;
@@ -106,7 +148,6 @@ int Game::MousePicking()
 }
 
 Game::Game()
-
 {
     m_deviceResources = std::make_unique<DX::DeviceResources>();
     m_deviceResources->RegisterDeviceNotify(this);
@@ -136,7 +177,10 @@ void Game::Initialize(HWND window, int width, int height)
 {
     //My Stuff
     _mainCamera.Initiliazie();
+    _mainCamera.SetSelectedObject(&_pickedObjects);
+
     _objectManipulator.Initiliazie();
+    _objectManipulator.SetSelectedObject(&_pickedObjects);
     _previousPickedObjectID = -1;
 
     GetClientRect(window, &m_ScreenDimensions);
@@ -316,30 +360,34 @@ void Game::Render()
     m_sprites->Begin();
     WCHAR   Buffer[256];
     auto var = L"Current Mode: " + StringToWCHART(_objectManipulator.GetCurrentSelectedModeName());
-    DisplayObject* selectedObject = _objectManipulator.GetSelectedObject();
-	if (selectedObject != nullptr)
-	{
-		switch (_objectManipulator.GetCurrentSelectedMode())
-		{
-		case ObjectManipulator::None:
+    if (_pickedObjects.size() == 1)
+    {
+        DisplayObject* selectedObject = _pickedObjects.begin()->second;
+        if (selectedObject != nullptr)
+        {
+            switch (_objectManipulator.GetCurrentSelectedMode())
+            {
+            case ObjectManipulator::None:
                 break;
-		case ObjectManipulator::Translate:
-            var += L"\nX Pos: " + std::to_wstring(selectedObject->m_position.x);
-            var += L"\nY Pos: " + std::to_wstring(selectedObject->m_position.y);
-            var += L"\nZ Pos: " + std::to_wstring(selectedObject->m_position.z);
-            break;
-        case ObjectManipulator::Rotate:
-            var += L"\nX Rot: " + std::to_wstring(selectedObject->m_orientation.x);
-            var += L"\nY Rot: " + std::to_wstring(selectedObject->m_orientation.y);
-            var += L"\nZ Rot: " + std::to_wstring(selectedObject->m_orientation.z);
-            break;
-        case ObjectManipulator::Scale:
-            var += L"\nX Scale: " + std::to_wstring(selectedObject->m_scale.x);
-            var += L"\nY Scale: " + std::to_wstring(selectedObject->m_scale.y);
-            var += L"\nZ Scale: " + std::to_wstring(selectedObject->m_scale.z);
-            break;
-		}
-	}
+            case ObjectManipulator::Translate:
+                var += L"\nX Pos: " + std::to_wstring(selectedObject->m_position.x);
+                var += L"\nY Pos: " + std::to_wstring(selectedObject->m_position.y);
+                var += L"\nZ Pos: " + std::to_wstring(selectedObject->m_position.z);
+                break;
+            case ObjectManipulator::Rotate:
+                var += L"\nX Rot: " + std::to_wstring(selectedObject->m_orientation.x);
+                var += L"\nY Rot: " + std::to_wstring(selectedObject->m_orientation.y);
+                var += L"\nZ Rot: " + std::to_wstring(selectedObject->m_orientation.z);
+                break;
+            case ObjectManipulator::Scale:
+                var += L"\nX Scale: " + std::to_wstring(selectedObject->m_scale.x);
+                var += L"\nY Scale: " + std::to_wstring(selectedObject->m_scale.y);
+                var += L"\nZ Scale: " + std::to_wstring(selectedObject->m_scale.z);
+                break;
+            }
+        }
+    }
+	
 
 	m_font->DrawString(m_sprites.get(), var.c_str(), XMFLOAT2(10, 10), Colors::Yellow);
     m_sprites->End();

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <map>
+
 #include "DeviceResources.h"
 #include "StepTimer.h"
 #include "SceneObject.h"
@@ -29,8 +31,9 @@ public:
 	ObjectManipulator _objectManipulator;
 
 	RECT m_ScreenDimensions;
-	int MousePicking();
+	int MousePicking(bool multipleSelection);
 	int _previousPickedObjectID;
+	std::map<int, DisplayObject*> _pickedObjects;
 
 public:
 
