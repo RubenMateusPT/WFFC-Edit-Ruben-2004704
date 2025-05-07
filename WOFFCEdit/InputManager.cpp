@@ -5,6 +5,26 @@ bool InputManager::IsKeyPressed(char key)
 	return _keyboardKeys[key];
 }
 
+bool InputManager::IsUpArrowPressed()
+{
+	return _upArrow;
+}
+
+bool InputManager::IsDownArrowPressed()
+{
+	return _downArrow;
+}
+
+bool InputManager::IsLeftArrowPressed()
+{
+	return _leftArrow;
+}
+
+bool InputManager::IsRightArrowPressed()
+{
+	return _rightArrow;
+}
+
 bool InputManager::IsLeftAltPressed()
 {
 	return _leftAltKey;

@@ -79,6 +79,9 @@ int Game::MousePicking()
     if (selectedID >= 0) //On New Selected Object
     {
         _mainCamera.SetSelectedObject(&m_displayList[selectedID]);
+        _objectManipulator.SetSelectedObject(&m_displayList[selectedID]);
+
+        //Highlight selected obj to red
         m_displayList[selectedID].m_model->UpdateEffects([](IEffect* objectEffect)
             {
                 auto effect = dynamic_cast<BasicEffect*>(objectEffect);
@@ -92,6 +95,7 @@ int Game::MousePicking()
     else //On Empty Selection
     {
         _mainCamera.SetSelectedObject(nullptr);
+        _objectManipulator.SetSelectedObject(nullptr);
     }
 
     _previousPickedObjectID = selectedID;
@@ -132,6 +136,7 @@ void Game::Initialize(HWND window, int width, int height)
 {
     //My Stuff
     _mainCamera.Initiliazie();
+    _objectManipulator.Initiliazie();
     _previousPickedObjectID = -1;
 
     GetClientRect(window, &m_ScreenDimensions);
@@ -188,6 +193,7 @@ void Game::Tick(InputManager *Input)
 
 	//Process Raw Inputs
 	_mainCamera.ProcessInput(Input);
+    _objectManipulator.ProcessInput(Input);
 
 
     m_timer.Tick([&]()
@@ -212,6 +218,8 @@ void Game::Tick(InputManager *Input)
 void Game::Update(DX::StepTimer const& timer)
 {
     _mainCamera.Update();
+
+    _objectManipulator.Update();
 
 	//apply camera vectors
     m_view = Matrix::CreateLookAt(_mainCamera.GetCameraPosition(), _mainCamera.GetCameraLookAt(), Vector3::UnitY);
@@ -272,12 +280,7 @@ void Game::Render()
 		const XMVECTORF32 yaxis = { 0.f, 0.f, 512.f };
 		DrawGrid(xaxis, yaxis, g_XMZero, 512, 512, Colors::Gray);
 	}
-	//CAMERA POSITION ON HUD
-	m_sprites->Begin();
-	WCHAR   Buffer[256];
-	std::wstring var = L"Cam X: " + std::to_wstring(_mainCamera.GetCameraPosition().x) + L"Cam Z: " + std::to_wstring(_mainCamera.GetCameraPosition().z);
-	m_font->DrawString(m_sprites.get(), var.c_str() , XMFLOAT2(100, 10), Colors::Yellow);
-	m_sprites->End();
+
 
 	//RENDER OBJECTS FROM SCENEGRAPH
 	int numRenderObjects = m_displayList.size();
@@ -308,6 +311,38 @@ void Game::Render()
 
 	//Render the batch,  This is handled in the Display chunk becuase it has the potential to get complex
 	m_displayChunk.RenderBatch(m_deviceResources);
+
+    //CAMERA POSITION ON HUD
+    m_sprites->Begin();
+    WCHAR   Buffer[256];
+    auto var = L"Current Mode: " + StringToWCHART(_objectManipulator.GetCurrentSelectedModeName());
+    DisplayObject* selectedObject = _objectManipulator.GetSelectedObject();
+	if (selectedObject != nullptr)
+	{
+		switch (_objectManipulator.GetCurrentSelectedMode())
+		{
+		case ObjectManipulator::None:
+                break;
+		case ObjectManipulator::Translate:
+            var += L"\nX Pos: " + std::to_wstring(selectedObject->m_position.x);
+            var += L"\nY Pos: " + std::to_wstring(selectedObject->m_position.y);
+            var += L"\nZ Pos: " + std::to_wstring(selectedObject->m_position.z);
+            break;
+        case ObjectManipulator::Rotate:
+            var += L"\nX Rot: " + std::to_wstring(selectedObject->m_orientation.x);
+            var += L"\nY Rot: " + std::to_wstring(selectedObject->m_orientation.y);
+            var += L"\nZ Rot: " + std::to_wstring(selectedObject->m_orientation.z);
+            break;
+        case ObjectManipulator::Scale:
+            var += L"\nX Scale: " + std::to_wstring(selectedObject->m_scale.x);
+            var += L"\nY Scale: " + std::to_wstring(selectedObject->m_scale.y);
+            var += L"\nZ Scale: " + std::to_wstring(selectedObject->m_scale.z);
+            break;
+		}
+	}
+
+	m_font->DrawString(m_sprites.get(), var.c_str(), XMFLOAT2(10, 10), Colors::Yellow);
+    m_sprites->End();
 
     m_deviceResources->Present();
 }

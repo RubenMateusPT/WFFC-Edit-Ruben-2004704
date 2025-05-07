@@ -88,6 +88,8 @@ public:
 	DirectX::SimpleMath::Vector3 GetCameraPosition() { return _position; }
 	DirectX::SimpleMath::Vector3 GetCameraLookAt() { return _lookAt; }
 
+
+
 public:
 	void Initiliazie();
 	void SetSelectedObject(DisplayObject* selected);

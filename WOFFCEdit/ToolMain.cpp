@@ -306,10 +306,28 @@ void ToolMain::UpdateInput(MSG * msg)
 	{
 		// Read Keyboard
 		case WM_KEYDOWN:
+			if (msg->wParam == VK_UP)
+				_inputManager._upArrow = true;
+			else if (msg->wParam == VK_DOWN)
+				_inputManager._downArrow = true;
+			else if (msg->wParam == VK_LEFT)
+				_inputManager._leftArrow = true;
+			else if (msg->wParam == VK_RIGHT)
+				_inputManager._rightArrow = true;
+
 			_inputManager._keyboardKeys[msg->wParam] = true;
 			break;
 
 		case WM_KEYUP:
+			if (msg->wParam == VK_UP)
+				_inputManager._upArrow = false;
+			else if (msg->wParam == VK_DOWN)
+				_inputManager._downArrow = false;
+			else if (msg->wParam == VK_LEFT)
+				_inputManager._leftArrow = false;
+			else if (msg->wParam == VK_RIGHT)
+				_inputManager._rightArrow = false;
+
 			_inputManager._keyboardKeys[msg->wParam] = false;
 			break;
 

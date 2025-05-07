@@ -15,6 +15,7 @@
 
 #include "Camera.h"
 #include "InputManager.h"
+#include "ObjectManipulator.h"
 
 
 // A basic game implementation that creates a D3D11 device and
@@ -25,14 +26,12 @@ public:
 	//My Stuff
 	InputManager* _input;
 	Camera _mainCamera;
-
-	int MousePicking();
-
-	int _previousPickedObjectID;
-
-
+	ObjectManipulator _objectManipulator;
 
 	RECT m_ScreenDimensions;
+	int MousePicking();
+	int _previousPickedObjectID;
+
 public:
 
 	Game();
