@@ -35,6 +35,10 @@ public:
 	int _previousPickedObjectID;
 	std::map<int, DisplayObject*> _pickedObjects;
 
+	float _pasteOffset;
+	std::vector<std::tuple<int, int>> _copiedObjects;
+
+
 public:
 
 	Game();

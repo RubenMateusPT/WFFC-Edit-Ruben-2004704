@@ -71,7 +71,7 @@ int Game::MousePicking(bool multipleSelection)
         {
             for (auto pickedObject : _pickedObjects)
             {
-                pickedObject.second->m_model->UpdateEffects([](IEffect* objectEffect)
+                m_displayList[pickedObject.first].m_model->UpdateEffects([](IEffect* objectEffect)
                     {
                         auto effect = dynamic_cast<BasicEffect*>(objectEffect);
                         if (effect)
@@ -128,7 +128,8 @@ int Game::MousePicking(bool multipleSelection)
             }
             else
             {
-                key->second->m_model->UpdateEffects([](IEffect* objectEffect)
+                
+                m_displayList[key->first].m_model->UpdateEffects([](IEffect* objectEffect)
                     {
                         auto effect = dynamic_cast<BasicEffect*>(objectEffect);
                         if (effect)
@@ -176,6 +177,8 @@ Game::~Game()
 void Game::Initialize(HWND window, int width, int height)
 {
     //My Stuff
+    _pasteOffset = 3.0;
+
     _mainCamera.Initiliazie();
     _mainCamera.SetSelectedObject(&_pickedObjects);
 
@@ -235,6 +238,28 @@ void Game::Tick(InputManager *Input)
 {
     _input = Input;
 
+    //Copy,Paste should be in its own class
+
+    if (_input->IsLeftCtrlPressed() && _input->IsKeyPressed('C'))
+    {
+        _copiedObjects.clear();
+
+	    for (auto pickedObject : _pickedObjects)
+	    {
+            _copiedObjects.push_back(
+                std::tuple<int, int>(
+                    pickedObject.first,
+                    0
+                )
+            );
+
+	    }
+
+        _input->_keyboardKeys['C'] = false;
+    }
+
+
+
 	//Process Raw Inputs
 	_mainCamera.ProcessInput(Input);
     _objectManipulator.ProcessInput(Input);
@@ -261,8 +286,92 @@ void Game::Tick(InputManager *Input)
 // Updates the world.
 void Game::Update(DX::StepTimer const& timer)
 {
-    _mainCamera.Update();
+    //Copy,Paste should be in its own class
 
+    if (_input->IsLeftCtrlPressed() && _input->IsKeyPressed('V'))
+    {
+        for (auto pickedObject : _copiedObjects)
+        {
+            auto originalIndex = std::get<0>(pickedObject);
+            auto amountOfPaste = std::get<1>(pickedObject);
+
+            auto device = m_deviceResources->GetD3DDevice();
+
+            //create a temp display object that we will populate then append to the display list.
+            DisplayObject* original = &m_displayList[originalIndex];
+            DisplayObject newDisplayObject;
+
+            //load model
+            std::wstring modelwstr = original->modelString;	//convect string to Wchar
+            newDisplayObject.m_model = Model::CreateFromCMO(device, modelwstr.c_str(), *m_fxFactory, true);	//get DXSDK to load model "False" for LH coordinate system (maya)
+            newDisplayObject.modelString = modelwstr;
+
+            //Load Texture
+            std::wstring texturewstr = original->textureString;								//convect string to Wchar
+            newDisplayObject.textureString = texturewstr;
+            HRESULT rs;
+            rs = CreateDDSTextureFromFile(device, texturewstr.c_str(), nullptr, &newDisplayObject.m_texture_diffuse);	//load tex into Shader resource
+
+            //if texture fails.  load error default
+            if (rs)
+            {
+                CreateDDSTextureFromFile(device, L"database/data/Error.dds", nullptr, &newDisplayObject.m_texture_diffuse);	//load tex into Shader resource
+            }
+
+            //apply new texture to models effect
+            newDisplayObject.m_model->UpdateEffects([&](IEffect* effect) //This uses a Lambda function,  if you dont understand it: Look it up.
+                {
+                    auto lights = dynamic_cast<BasicEffect*>(effect);
+                    if (lights)
+                    {
+                        lights->SetTexture(newDisplayObject.m_texture_diffuse);
+                    }
+                });
+
+            //set position
+            newDisplayObject.m_position = original->m_position;
+
+            //setorientation
+            newDisplayObject.m_orientation = original->m_orientation;
+
+            //set scale
+            newDisplayObject.m_scale = original->m_scale;
+
+            //set wireframe / render flags
+            newDisplayObject.m_render = original->m_render;
+            newDisplayObject.m_wireframe = original->m_wireframe;
+
+            newDisplayObject.m_light_type = original->m_light_type;
+            newDisplayObject.m_light_diffuse_r = original->m_light_diffuse_r;
+            newDisplayObject.m_light_diffuse_g = original->m_light_diffuse_g;
+            newDisplayObject.m_light_diffuse_b = original->m_light_diffuse_b;
+            newDisplayObject.m_light_specular_r = original->m_light_specular_r;
+            newDisplayObject.m_light_specular_g = original->m_light_specular_g;
+            newDisplayObject.m_light_specular_b = original->m_light_specular_b;
+            newDisplayObject.m_light_spot_cutoff = original->m_light_spot_cutoff;
+            newDisplayObject.m_light_constant = original->m_light_constant;
+            newDisplayObject.m_light_linear = original->m_light_linear;
+            newDisplayObject.m_light_quadratic = original->m_light_quadratic;
+
+            newDisplayObject.m_position.y += (newDisplayObject.m_scale.y - 1) + _pasteOffset * (amountOfPaste + 1);
+            newDisplayObject.m_model->UpdateEffects([](IEffect* objectEffect)
+                {
+                    auto effect = dynamic_cast<BasicEffect*>(objectEffect);
+                    if (effect)
+                    {
+                        effect->SetDiffuseColor(Colors::White);
+                    }
+                });
+
+
+            m_displayList.push_back(newDisplayObject);
+            std::get<1>(pickedObject)++;
+        }
+
+        _input->_keyboardKeys['V'] = false;
+    }
+
+    _mainCamera.Update();
     _objectManipulator.Update();
 
 	//apply camera vectors
@@ -515,13 +624,15 @@ void Game::BuildDisplayList(std::vector<SceneObject> * SceneGraph)
 		
 		//create a temp display object that we will populate then append to the display list.
 		DisplayObject newDisplayObject;
-		
+
 		//load model
 		std::wstring modelwstr = StringToWCHART(SceneGraph->at(i).model_path);							//convect string to Wchar
 		newDisplayObject.m_model = Model::CreateFromCMO(device, modelwstr.c_str(), *m_fxFactory, true);	//get DXSDK to load model "False" for LH coordinate system (maya)
+        newDisplayObject.modelString = modelwstr;
 
 		//Load Texture
 		std::wstring texturewstr = StringToWCHART(SceneGraph->at(i).tex_diffuse_path);								//convect string to Wchar
+        newDisplayObject.textureString = texturewstr;
 		HRESULT rs;
 		rs = CreateDDSTextureFromFile(device, texturewstr.c_str(), nullptr, &newDisplayObject.m_texture_diffuse);	//load tex into Shader resource
 

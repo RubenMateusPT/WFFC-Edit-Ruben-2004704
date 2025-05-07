@@ -7,10 +7,13 @@ class DisplayObject
 public:
 	DisplayObject();
 	~DisplayObject();
+	void Copy(DisplayObject* copy);
 
 	std::shared_ptr<DirectX::Model>						m_model;							//main Mesh
-	ID3D11ShaderResourceView *							m_texture_diffuse;					//diffuse texture
+	std::wstring modelString;
 
+	ID3D11ShaderResourceView *							m_texture_diffuse;					//diffuse texture
+	std::wstring textureString;
 
 	int m_ID;
 	DirectX::SimpleMath::Vector3			m_position;
