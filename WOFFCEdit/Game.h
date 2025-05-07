@@ -29,7 +29,6 @@ public:
 	int MousePicking();
 
 	int _previousPickedObjectID;
-	DisplayObject* _previousPickedObject;
 
 
 

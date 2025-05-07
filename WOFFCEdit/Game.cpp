@@ -19,7 +19,7 @@ int Game::MousePicking()
     float pickedDistance = 0;
 
     //setup near and far planes of frustum with mouse X and mouse y passed down from Toolmain. 
-        //they may look the same but note, the difference in Z
+	//they may look the same but note, the difference in Z
     auto mousePos = _input->GetMousePosition();
     const XMVECTOR nearSource = XMVectorSet(mousePos.x, mousePos.y, 0.0f, 1.0f);
     const XMVECTOR farSource = XMVectorSet(mousePos.x, mousePos.y, 1.0f, 1.0f);
@@ -50,8 +50,6 @@ int Game::MousePicking()
         //loop through mesh list for object
         for (int y = 0; y < m_displayList[i].m_model.get()->meshes.size(); y++)
         {
-            m_displayList[i].m_model.get()->meshes[y]->boundingBox.Center;
-
             //checking for ray intersection
             if (m_displayList[i].m_model.get()->meshes[y]->boundingBox.Intersects(nearPoint, pickingVector, pickedDistance))
             {
@@ -66,34 +64,37 @@ int Game::MousePicking()
     {
 	    if (_previousPickedObjectID >= 0)
 	    {
-            _previousPickedObject->m_model->UpdateEffects([](IEffect* objectEffect)
+            m_displayList[_previousPickedObjectID].m_model->UpdateEffects([](IEffect* objectEffect)
                 {
-                    IEffectFog* highlightEffect = dynamic_cast<IEffectFog*>(objectEffect);
-                    if (highlightEffect)
-                        highlightEffect->SetFogEnabled(false);
+                    auto effect = dynamic_cast<BasicEffect*>(objectEffect);
+                    if (effect)
+                    {
+                        effect->SetDiffuseColor(Colors::White);
+                    }
                 });
 	    }
     }
+    
 
     if (selectedID >= 0) //On New Selected Object
     {
         _mainCamera.SetSelectedObject(&m_displayList[selectedID]);
-        //object.m_model->UpdateEffects([](IEffect* objectEffect)
-        //    {
-        //        IEffectFog* highlightEffect = dynamic_cast<IEffectFog*>(objectEffect);
-        //        if (highlightEffect)
-        //        {
-        //            highlightEffect->SetFogStart(0.0f);
-        //            highlightEffect->SetFogEnd(0.0f);
-        //            highlightEffect->SetFogColor(Colors::Red);
-        //            highlightEffect->SetFogEnd(true);
-        //        }
-        //    });
+        m_displayList[selectedID].m_model->UpdateEffects([](IEffect* objectEffect)
+            {
+                auto effect = dynamic_cast<BasicEffect*>(objectEffect);
+				if (effect)
+				{
+                    effect->SetDiffuseColor(Colors::Red);
+                    effect->SetLightingEnabled(true);
+				}
+            });
     }
     else //On Empty Selection
     {
         _mainCamera.SetSelectedObject(nullptr);
     }
+
+    _previousPickedObjectID = selectedID;
 
     //if we got a hit.  return it.  
     return selectedID;
